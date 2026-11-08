@@ -1,0 +1,6 @@
+{
+  "name": "MY WORK — Personal Work OS",
+  "description": "Minimal, systematic, and glassmorphic personal work operating system to capture knowledge, plan your day, focus, build projects, and review progress.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

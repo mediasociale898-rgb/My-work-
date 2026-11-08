@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>State-Space Modeling & System Controllability — Study Notes</title>
+  <style>
+    /* 1. Design & Aesthetic (Calm, Distraction-Free Minimalist) */
+    :root {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --accent: #4f46e5;
+      --accent-light: #eef2ff;
+      --success: #16a34a;
+      --success-light: #f0fdf4;
+      --error: #dc2626;
+      --error-light: #fef2f2;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.7;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 80px;
+    }
+
+    /* Sticky Reading Progress Bar */
+    #progress-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: transparent;
+      z-index: 1000;
+    }
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.1s ease-out;
+    }
+
+    /* Container layout */
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 24px 0 24px;
+    }
+
+    /* Typography & Hierarchy */
+    header {
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      background: var(--accent-light);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--text-main);
+      margin-bottom: 12px;
+    }
+    .meta {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 36px 0 16px 0;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h3 {
+      font-size: 17px;
+      font-weight: 600;
+      margin: 24px 0 10px 0;
+    }
+
+    p {
+      margin-bottom: 18px;
+    }
+
+    ul, ol {
+      margin: 0 0 24px 20px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    strong {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    /* Content Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    /* Callout Boxes */
+    .callout {
+      background: var(--accent-light);
+      border-left: 4px solid var(--accent);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 24px 0;
+      font-size: 15px;
+    }
+    .callout strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 4px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    /* Visual Containers & Diagrams */
+    .diagram-container {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      text-align: center;
+    }
+    .diagram-caption {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 12px;
+    }
+
+    /* Image Card Placeholder */
+    .image-card {
+      background: #f1f5f9;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 32px 20px;
+      text-align: center;
+      margin: 24px 0;
+    }
+    .image-card svg {
+      margin: 0 auto 12px auto;
+      color: #94a3b8;
+    }
+    .image-card .search-tag {
+      display: inline-block;
+      font-size: 12px;
+      font-family: monospace;
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: #475569;
+      margin-top: 6px;
+    }
+
+    /* Interactive Quiz Section */
+    .quiz-section {
+      margin-top: 56px;
+      padding-top: 36px;
+      border-top: 2px solid var(--border-color);
+    }
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .quiz-score-badge {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: #e2e8f0;
+      color: var(--text-main);
+    }
+    .question-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      transition: border-color 0.2s;
+    }
+    .question-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      color: var(--text-main);
+    }
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .option-btn {
+      width: 100%;
+      text-align: left;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--text-main);
+      cursor: pointer;
+      line-height: 1.5;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .option-btn:hover:not(:disabled) {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .option-btn.correct {
+      background: var(--success-light) !important;
+      border-color: var(--success) !important;
+      color: var(--success) !important;
+      font-weight: 600;
+    }
+    .option-btn.incorrect {
+      background: var(--error-light) !important;
+      border-color: var(--error) !important;
+      color: var(--error) !important;
+      font-weight: 600;
+    }
+    .feedback-box {
+      margin-top: 12px;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      display: none;
+    }
+    .feedback-box.correct {
+      background: var(--success-light);
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+      display: block;
+    }
+    .feedback-box.incorrect {
+      background: var(--error-light);
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+      display: block;
+    }
+    .reset-quiz-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-block;
+    }
+    .reset-quiz-btn:hover {
+      opacity: 0.95;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sticky Top Reading Progress Bar -->
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+  </div>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <span class="tag">Engineering Study Guide</span>
+      <h1>State-Space Modeling & System Controllability</h1>
+      <div class="meta">Essential Principles of Continuous Dynamics, Kalman Rank, & Closed-Loop Control</div>
+    </header>
+
+    <!-- Section 1: Overview & Core Definitions -->
+    <section>
+      <h2>1. The State-Space Representation</h2>
+      <p>
+        Classical transfer function methods analyze systems from an input-output perspective in the frequency domain. 
+        In contrast, <strong>State-Space Modeling</strong> represents dynamic systems through first-order differential 
+        equations in the time domain, capturing both internal dynamics and external behavior.
+      </p>
+
+      <div class="callout">
+        <strong>Definition: State Vector x(t)</strong>
+        The minimal mathematical vector of variables that completely describes the internal storage and physical state 
+        of a dynamic system at any given moment in time.
+      </div>
+
+      <div class="card">
+        <h3>Standard Linear Continuous-Time Equations</h3>
+        <ul>
+          <li><strong>State Differential Equation:</strong> <code>x'(t) = A·x(t) + B·u(t)</code></li>
+          <li><strong>Output Equation:</strong> <code>y(t) = C·x(t) + D·u(t)</code></li>
+        </ul>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 0;">
+          Where <strong>A</strong> is the system dynamic matrix (n×n), <strong>B</strong> is the input coupling matrix (n×m), 
+          <strong>C</strong> is the output observation matrix (p×n), and <strong>D</strong> is the direct transmission matrix.
+        </p>
+      </div>
+    </section>
+
+    <!-- Section 2: Smart Visual (SVG System Architecture Flowchart) -->
+    <section>
+      <h2>2. Process Architecture & Flow</h2>
+      <p>
+        The state integrator acts as the central memory of the physical system, continuously updated by current state dissipation 
+        and external control inputs.
+      </p>
+
+      <div class="diagram-container">
+        <!-- Minimalist SVG Process Diagram -->
+        <svg viewBox="0 0 640 180" width="100%" style="height: auto; max-width: 100%; display: block;" xmlns="http://www.w3.org/2000/svg">
+          <!-- Input u(t) -->
+          <circle cx="40" cy="90" r="18" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="40" y="95" font-size="12" font-weight="bold" fill="#4f46e5" text-anchor="middle">u(t)</text>
+          
+          <!-- Line to B -->
+          <line x1="58" y1="90" x2="110" y2="90" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+          
+          <!-- Box B -->
+          <rect x="110" y="65" width="60" height="50" rx="6" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+          <text x="140" y="95" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle">B</text>
+          
+          <!-- Line to Sum -->
+          <line x1="170" y1="90" x2="210" y2="90" stroke="#94a3b8" stroke-width="2"/>
+          
+          <!-- Summing junction -->
+          <circle cx="225" cy="90" r="14" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+          <text x="225" y="94" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle">+</text>
+          
+          <!-- Line to Integrator -->
+          <line x1="239" y1="90" x2="280" y2="90" stroke="#94a3b8" stroke-width="2"/>
+          <text x="260" y="80" font-size="11" font-weight="600" fill="#4f46e5" text-anchor="middle">x'(t)</text>
+          
+          <!-- Integrator ∫ -->
+          <rect x="280" y="65" width="65" height="50" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="312" y="95" font-size="18" font-weight="bold" fill="#4f46e5" text-anchor="middle">∫ dt</text>
+          
+          <!-- Line to x(t) node -->
+          <line x1="345" y1="90" x2="410" y2="90" stroke="#94a3b8" stroke-width="2"/>
+          <circle cx="410" cy="90" r="4" fill="#1e293b"/>
+          <text x="385" y="80" font-size="11" font-weight="600" fill="#4f46e5" text-anchor="middle">x(t)</text>
+          
+          <!-- Line to C -->
+          <line x1="410" y1="90" x2="470" y2="90" stroke="#94a3b8" stroke-width="2"/>
+          
+          <!-- Box C -->
+          <rect x="470" y="65" width="60" height="50" rx="6" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+          <text x="500" y="95" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle">C</text>
+          
+          <!-- Line to Output y(t) -->
+          <line x1="530" y1="90" x2="585" y2="90" stroke="#94a3b8" stroke-width="2"/>
+          <circle cx="600" cy="90" r="18" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+          <text x="600" y="95" font-size="12" font-weight="bold" fill="#16a34a" text-anchor="middle">y(t)</text>
+          
+          <!-- Feedback loop through A -->
+          <line x1="410" y1="94" x2="410" y2="150" stroke="#94a3b8" stroke-width="2"/>
+          <line x1="410" y1="150" x2="345" y2="150" stroke="#94a3b8" stroke-width="2"/>
+          
+          <!-- Box A -->
+          <rect x="280" y="130" width="65" height="40" rx="6" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+          <text x="312" y="155" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle">A</text>
+          
+          <line x1="280" y1="150" x2="225" y2="150" stroke="#94a3b8" stroke-width="2"/>
+          <line x1="225" y1="150" x2="225" y2="104" stroke="#94a3b8" stroke-width="2"/>
+        </svg>
+        <div class="diagram-caption">Figure 1: Closed continuous-time state-space integrator signal flow diagram.</div>
+      </div>
+    </section>
+
+    <!-- Section 3: Controllability & Mathematical Criteria -->
+    <section>
+      <h2>3. The Controllability Criterion</h2>
+      <p>
+        A continuous system is said to be <strong>completely controllable</strong> if an unconstrained control input 
+        <code>u(t)</code> can steer any initial state <code>x(0)</code> to any target final state in finite time.
+      </p>
+
+      <div class="callout">
+        <strong>The Kalman Controllability Matrix</strong>
+        <code>C = [ B | A·B | A²·B | ... | Aⁿ⁻¹·B ]</code><br>
+        The system is completely controllable if and only if the rank of matrix <strong>C</strong> equals the dimension 
+        of the state vector <strong>n</strong> (i.e. full row rank).
+      </div>
+
+      <!-- Smart Visual 2: Data Comparison Chart (SVG) -->
+      <div class="diagram-container">
+        <h3 style="margin-top: 0; margin-bottom: 16px;">System Dynamic Settling Time by Damping Ratio (ζ)</h3>
+        <svg viewBox="0 0 540 140" width="100%" style="height: auto; max-width: 100%; display: block;" xmlns="http://www.w3.org/2000/svg">
+          <!-- X and Y Axes -->
+          <line x1="50" y1="110" x2="500" y2="110" stroke="#cbd5e1" stroke-width="2"/>
+          <line x1="50" y1="15" x2="50" y2="110" stroke="#cbd5e1" stroke-width="2"/>
+
+          <!-- Bars: Damping comparisons -->
+          <!-- Underdamped ζ = 0.2 -->
+          <rect x="80" y="30" width="60" height="80" rx="4" fill="#f87171"/>
+          <text x="110" y="100" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">4.2s</text>
+          <text x="110" y="126" font-size="11" fill="#64748b" text-anchor="middle">ζ = 0.2</text>
+
+          <!-- Medium ζ = 0.5 -->
+          <rect x="180" y="55" width="60" height="55" rx="4" fill="#fbbf24"/>
+          <text x="210" y="100" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">2.8s</text>
+          <text x="210" y="126" font-size="11" fill="#64748b" text-anchor="middle">ζ = 0.5</text>
+
+          <!-- Optimal ζ = 0.707 -->
+          <rect x="280" y="75" width="60" height="35" rx="4" fill="#4f46e5"/>
+          <text x="310" y="98" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">1.8s</text>
+          <text x="310" y="126" font-size="11" font-weight="bold" fill="#4f46e5" text-anchor="middle">ζ = 0.707</text>
+
+          <!-- Critically Damped ζ = 1.0 -->
+          <rect x="380" y="65" width="60" height="45" rx="4" fill="#34d399"/>
+          <text x="410" y="100" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">2.4s</text>
+          <text x="410" y="126" font-size="11" fill="#64748b" text-anchor="middle">ζ = 1.0</text>
+        </svg>
+        <div class="diagram-caption">Figure 2: Empirical transient settling time (2% threshold) across classical damping ratios.</div>
+      </div>
+
+      <!-- Styled Image Card Placeholder -->
+      <div class="image-card">
+        <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+          <rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+        </svg>
+        <div style="font-size: 14px; font-weight: 600; color: #334155;">Physical Robotic Actuator State Observation</div>
+        <div class="diagram-caption" style="margin-top: 4px;">
+          Hardware verification bench measuring motor shaft angular position via rotary optical encoder.
+        </div>
+        <span class="search-tag">Search query: "brushless motor test bench optical encoder control loop"</span>
+      </div>
+    </section>
+
+    <!-- Section 4: Interactive Quiz (3 to 5 questions) -->
+    <section class="quiz-section">
+      <div class="quiz-header">
+        <div>
+          <h2 style="margin: 0;">Interactive Recall Quiz</h2>
+          <div style="font-size: 14px; color: var(--text-muted);">Test your understanding of state-space dynamics</div>
+        </div>
+        <div id="quiz-score" class="quiz-score-badge">Score: 0 / 4</div>
+      </div>
+
+      <!-- Question 1 -->
+      <div class="question-card" data-correct="0">
+        <div class="question-title">1. What constitutes the minimal definition of the State Vector x(t)?</div>
+        <div class="options-grid">
+          <button class="option-btn" data-index="0">The minimal vector of variables that completely describes the internal dynamic state of the physical system at time t.</button>
+          <button class="option-btn" data-index="1">The algebraic sum of all measured sensors after applying low-pass filtering.</button>
+          <button class="option-btn" data-index="2">The frequency transfer function evaluated along the imaginary jω axis.</button>
+          <button class="option-btn" data-index="3">A software telemetry record stored in permanent non-volatile flash memory.</button>
+        </div>
+        <div class="feedback-box"></div>
+      </div>
+
+      <!-- Question 2 -->
+      <div class="question-card" data-correct="2">
+        <div class="question-title">2. Under what condition is a system with state dimension n completely controllable?</div>
+        <div class="options-grid">
+          <button class="option-btn" data-index="0">When the direct feedthrough matrix D is equal to zero.</button>
+          <button class="option-btn" data-index="1">When all eigenvalues of matrix A are strictly imaginary numbers.</button>
+          <button class="option-btn" data-index="2">When the Kalman Controllability Matrix [B, AB, ... Aⁿ⁻¹B] has rank equal to n.</button>
+          <button class="option-btn" data-index="3">When the output matrix C is diagonal and invertible.</button>
+        </div>
+        <div class="feedback-box"></div>
+      </div>
+
+      <!-- Question 3 -->
+      <div class="question-card" data-correct="1">
+        <div class="question-title">3. What does the Cayley-Hamilton Theorem guarantee for any square matrix A?</div>
+        <div class="options-grid">
+          <button class="option-btn" data-index="0">That matrix A always possesses purely real positive eigenvalues.</button>
+          <button class="option-btn" data-index="1">Every square matrix satisfies its own characteristic equation: det(λI - A) = 0.</button>
+          <button class="option-btn" data-index="2">The matrix inverse A⁻¹ can be computed without matrix multiplication.</button>
+          <button class="option-btn" data-index="3">The rank of matrix A must always equal the rank of matrix B.</button>
+        </div>
+        <div class="feedback-box"></div>
+      </div>
+
+      <!-- Question 4 -->
+      <div class="question-card" data-correct="3">
+        <div class="question-title">4. In the continuous state equation x'(t) = A·x(t) + B·u(t), what is the function of matrix B?</div>
+        <div class="options-grid">
+          <button class="option-btn" data-index="0">It maps internal state variables directly to the physical output display.</button>
+          <button class="option-btn" data-index="1">It describes the natural free dissipation of energy when inputs are zero.</button>
+          <button class="option-btn" data-index="2">It normalizes the sensors against ambient environmental noise.</button>
+          <button class="option-btn" data-index="3">It couples external control inputs u(t) into the rate of change of state variables.</button>
+        </div>
+        <div class="feedback-box"></div>
+      </div>
+
+      <button id="reset-btn" class="reset-quiz-btn">Reset Quiz</button>
+    </section>
+  </div>
+
+  <!-- Vanilla JavaScript: Scroll Progress & Interactive Quiz Logic -->
+  <script>
+    // 1. Reading Progress Bar
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrollPos = window.scrollY;
+      const progressPercent = docHeight > 0 ? (scrollPos / docHeight) * 100 : 0;
+      document.getElementById('progress-bar').style.width = progressPercent + '%';
+    });
+
+    // 2. Interactive Quiz State
+    const questionCards = document.querySelectorAll('.question-card');
+    const scoreBadge = document.getElementById('quiz-score');
+    const resetBtn = document.getElementById('reset-btn');
+
+    const explanations = [
+      "Correct! The state vector captures all energy storage variables necessary to forecast future states given future inputs.",
+      "Correct! The Kalman rank condition requires rank(C) = n for full state space reachability.",
+      "Correct! Substituting matrix A into its characteristic polynomial polynomial yields the zero matrix.",
+      "Correct! Matrix B determines how each actuator or voltage input influences state derivatives."
+    ];
+
+    let answeredCount = 0;
+    let correctCount = 0;
+
+    questionCards.forEach((card, qIndex) => {
+      const correctIndex = parseInt(card.dataset.correct, 10);
+      const buttons = card.querySelectorAll('.option-btn');
+      const feedback = card.querySelector('.feedback-box');
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          // Disable all buttons for this card
+          buttons.forEach(b => b.disabled = true);
+
+          const selectedIndex = parseInt(btn.dataset.index, 10);
+          const isCorrect = selectedIndex === correctIndex;
+
+          if (isCorrect) {
+            btn.classList.add('correct');
+            feedback.className = 'feedback-box correct';
+            feedback.textContent = explanations[qIndex] || 'Correct answer!';
+            correctCount++;
+          } else {
+            btn.classList.add('incorrect');
+            buttons[correctIndex].classList.add('correct');
+            feedback.className = 'feedback-box incorrect';
+            feedback.textContent = 'Incorrect. ' + (explanations[qIndex] || '');
+          }
+
+          answeredCount++;
+          scoreBadge.textContent = `Score: ${correctCount} / ${questionCards.length}`;
+          if (correctCount === questionCards.length) {
+            scoreBadge.style.background = '#dcfce7';
+            scoreBadge.style.color = '#15803d';
+          }
+        });
+      });
+    });
+
+    resetBtn.addEventListener('click', () => {
+      answeredCount = 0;
+      correctCount = 0;
+      scoreBadge.textContent = `Score: 0 / ${questionCards.length}`;
+      scoreBadge.style.background = '#e2e8f0';
+      scoreBadge.style.color = '#1e293b';
+
+      questionCards.forEach(card => {
+        const buttons = card.querySelectorAll('.option-btn');
+        const feedback = card.querySelector('.feedback-box');
+        buttons.forEach(b => {
+          b.disabled = false;
+          b.classList.remove('correct', 'incorrect');
+        });
+        feedback.className = 'feedback-box';
+        feedback.textContent = '';
+      });
+    });
+  </script>
+</body>
+</html>
